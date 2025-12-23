@@ -17,39 +17,30 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping
-    public ResponseEntity<TaskResponse> createTask (@RequestBody TaskRequest request, Authentication authentication)
+    public ResponseEntity<TaskResponse> createTask (@RequestBody TaskRequest request)
     {
-        return ResponseEntity.ok(taskService.createTask(request, authentication.getName()));
+        return ResponseEntity.ok(taskService.createTask(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<TaskResponse>> getMyTasks(Authentication authentication)
+    public ResponseEntity<List<TaskResponse>> getMyTasks()
     {
-        return ResponseEntity.ok(taskService.getMyTasks(authentication.getName()));
+        return ResponseEntity.ok(taskService.getMyTasks());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id , Authentication authentication)
+    public ResponseEntity<TaskResponse> getTaskById(@PathVariable Long id )
     {
-        return ResponseEntity.ok(taskService.getTaskById(id, authentication.getName()));
+        return ResponseEntity.ok(taskService.getTaskById(id));
     }
     @PutMapping("/{id}")
-    public ResponseEntity<TaskResponse> updateTask(
-            @PathVariable Long id,
-            @RequestBody TaskRequest request,
-            Authentication authentication
-    ) {
-        return ResponseEntity.ok(
-                taskService.updateTask(id, request, authentication.getName())
-        );
+    public ResponseEntity<TaskResponse> updateTask(@PathVariable Long id, @RequestBody TaskRequest request) {
+        return ResponseEntity.ok(taskService.updateTask(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteTask(
-            @PathVariable Long id,
-            Authentication authentication
-    ) {
-        taskService.deleteTask(id, authentication.getName());
+    public ResponseEntity<?> deleteTask(@PathVariable Long id) {
+        taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
 

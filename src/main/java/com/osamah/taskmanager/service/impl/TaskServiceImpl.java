@@ -8,6 +8,8 @@ import com.osamah.taskmanager.repository.TaskRepository;
 import com.osamah.taskmanager.repository.UserRepository;
 import com.osamah.taskmanager.service.TaskService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,37 +24,49 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
 
-    private User getUser(String username)
-    {
-        return userRepository.findByUsername(username).orElseThrow(()-> new RuntimeException("User not Found"));
+    private String currentUsername(){
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if(auth == null || !auth.isAuthenticated() || auth.getName() == null)
+        {
+            throw new RuntimeException("Unauthorized");
+        }
+        return auth.getName();
     }
-    private TaskResponse mapToResponse (Task task){
+
+    private User currentUser(){
+        String username = currentUsername();
+        return userRepository.findByUsername(username)
+                .orElseThrow(()-> new RuntimeException("User not found"));
+
+    }
+
+    private TaskResponse mapToResponse(Task task)
+    {
         return TaskResponse.builder()
                 .id(task.getId())
                 .title(task.getTitle())
-                .description(task.getDescription())
+                .description((task.getDescription()))
                 .completed(task.isCompleted())
                 .build();
     }
 
 
-
     @Override
-    public TaskResponse createTask(TaskRequest request, String username) {
-        User user = getUser(username);
+    public TaskResponse createTask(TaskRequest request) {
+        User user = currentUser();
+
         Task task = Task.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .createdAT(LocalDateTime.now())
+                .completed(false)
                 .user(user)
                 .build();
         return mapToResponse(taskRepository.save(task));
     }
 
     @Override
-    public List<TaskResponse> getMyTasks(String username) {
-        User user = getUser(username);
-
+    public List<TaskResponse> getMyTasks() {
+        User user = currentUser();
         return taskRepository.findByUser(user)
                 .stream()
                 .map(this::mapToResponse)
@@ -60,26 +74,34 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskResponse getTaskById(Long id, String username) {
-        User user = getUser(username);
-        Task task = taskRepository.findByIdAndUser(id, user) .orElseThrow(()-> new RuntimeException("Task not found"));
+    public TaskResponse getTaskById(Long id) {
+        User user = currentUser();
+        Task task = taskRepository.findByIdAndUser(id,user)
+                .orElseThrow(()-> new RuntimeException("Task not found"));
         return mapToResponse(task);
     }
 
     @Override
-    public TaskResponse updateTask(Long id, TaskRequest request, String username) {
-        User user = getUser(username);
-        Task task = taskRepository.findByIdAndUser(id,user).orElseThrow(()-> new RuntimeException("Task not found"));
+    public TaskResponse updateTask(Long id, TaskRequest request) {
+        User user = currentUser();
+        Task task = taskRepository.findByIdAndUser(id,user)
+                .orElseThrow(()->new RuntimeException("Task not found"));
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
+
+        if(request.getCompleted() != null){
+            task.setCompleted(request.getCompleted());
+        }
         return mapToResponse(taskRepository.save(task));
     }
 
     @Override
-    public void deleteTask(Long id, String username) {
-        User user = getUser(username);
-        Task task = taskRepository.findByIdAndUser(id,user).orElseThrow(()-> new RuntimeException("Task not found"));
+    public void deleteTask(Long id) {
+        User user  = currentUser();
+        Task task = taskRepository.findByIdAndUser(id,user)
+                .orElseThrow(()-> new RuntimeException("Task not found"));
 
         taskRepository.delete(task);
+
     }
 }
