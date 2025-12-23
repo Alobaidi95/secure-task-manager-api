@@ -1,9 +1,7 @@
 package com.osamah.taskmanager.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
@@ -18,19 +16,25 @@ public class Task {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(nullable = false)
     private String title;
 
     private String description;
 
-    private boolean completed = false;
 
-    private LocalDateTime createdAT ;
+    private boolean completed ;
+
+    @Column(nullable = false)
+    private LocalDateTime createdAt ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id" , nullable = false)
-    @JsonIgnore
     private User user;
+
+    @PrePersist
+    public void onCreate(){
+        this.createdAt = LocalDateTime.now();
+    }
 }

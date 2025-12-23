@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
         ApiError body =  ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
-                .error("Not Found.")
+                .error("Not Found")
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
@@ -38,7 +38,7 @@ public class GlobalExceptionHandler {
         ApiError body = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
-                .error("Bad Request.")
+                .error("Bad Request")
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
@@ -54,7 +54,7 @@ public class GlobalExceptionHandler {
         ApiError body = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.FORBIDDEN.value())
-                .error("Forbidden.")
+                .error("Forbidden")
                 .message("You don't have permission to access this resource")
                 .path(request.getRequestURI())
                 .build();
@@ -62,24 +62,42 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
 
     }
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ApiError> handleAuth(
+            org.springframework.security.core.AuthenticationException ex,
+            HttpServletRequest request
+    ) {
+        ApiError body = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Unauthorized")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
 
     // Validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleValidation(
+    public ResponseEntity<ValidationErrorResponse> handleValidation(
             MethodArgumentNotValidException ex,
             HttpServletRequest request
     ) {
-        String msg = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .orElse("Validation error");
+        var fieldErrors = ex.getBindingResult().getFieldErrors().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        err -> err.getField(),
+                        err -> err.getDefaultMessage(),
+                        (a, b) -> a // if duplicate field errors, keep first
+                ));
 
-        ApiError body = ApiError.builder()
+        ValidationErrorResponse body = ValidationErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Bad Request")
-                .message(msg)
+                .message("Validation failed")
                 .path(request.getRequestURI())
+                .fieldErrors(fieldErrors)
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);

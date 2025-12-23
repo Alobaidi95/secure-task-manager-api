@@ -5,6 +5,7 @@ import com.osamah.taskmanager.dto.RegisterRequest;
 import com.osamah.taskmanager.dto.LoginResponse;
 import com.osamah.taskmanager.security.JwtUtil;
 import com.osamah.taskmanager.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,7 +25,7 @@ public class AuthController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register (@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register (@Valid  @RequestBody RegisterRequest request) {
         userService.registerUser(
                 request.getUsername(),
                 request.getEmail(),
@@ -35,7 +36,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
